@@ -1,6 +1,6 @@
-# FastAPI Async API
+# FastAPI Async Banking API
 
-API RESTful assíncrona desenvolvida com FastAPI, PostgreSQL e SQLAlchemy, implementando autenticação JWT, paginação e testes assíncronos completos.
+API RESTful assíncrona desenvolvida com FastAPI, PostgreSQL e SQLAlchemy para gerenciamento de contas bancárias e operações financeiras, implementando autenticação JWT, validação de saldo, limites diários e testes completos.
 
 ## Tecnologias
 
@@ -15,12 +15,16 @@ API RESTful assíncrona desenvolvida com FastAPI, PostgreSQL e SQLAlchemy, imple
 ## Funcionalidades
 
 - Autenticação JWT com tokens Bearer
-- ✅ CRUD completo de itens
-- ✅ Paginação de resultados
-- ✅ Operações assíncronas end-to-end
-- ✅ Arquitetura modular e escalável
-- ✅ Documentação automática (Swagger/OpenAPI)
-- ✅ Testes automatizados com pytest
+- Gestão de contas bancárias (criação, listagem, desativação)
+- Operações bancárias (depósito e saque)
+- Validação de saldo e limites diários
+- Extrato bancário com paginação
+- Tipos de conta (corrente e poupança)
+- Histórico completo de transações
+- Operações assíncronas end-to-end
+- Arquitetura modular e escalável
+- Documentação automática (Swagger/OpenAPI)
+- Testes automatizados com pytest
 
 ## Configuração
 
@@ -29,9 +33,9 @@ API RESTful assíncrona desenvolvida com FastAPI, PostgreSQL e SQLAlchemy, imple
 Crie um arquivo `.env` na raiz do projeto:
 
 ```env
-DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/dbname
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/app
 JWT_SECRET=sua-chave-secreta-aqui
-JWT_ALGORITHM=HS256
+JWT_ALG=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 ```
 
@@ -78,6 +82,73 @@ Gera um token de acesso JWT.
 }
 ```
 
+### Contas Bancárias (Protegido)
+
+**POST** `/accounts`
+
+Cria uma nova conta bancária.
+
+```bash
+Authorization: Bearer <token>
+```
+
+```json
+{
+  "user_id": 1,
+  "account_type": "checking",
+  "initial_balance": 100.00,
+  "daily_limit": 1000.00
+}
+```
+
+**GET** `/accounts`
+
+Lista todas as contas bancárias (com filtros opcionais).
+
+**GET** `/accounts/{account_id}`
+
+Busca uma conta específica.
+
+**PATCH** `/accounts/{account_id}/deactivate`
+
+Desativa uma conta bancária.
+
+### Operações Bancárias (Protegido)
+
+**POST** `/operations/deposit`
+
+Realiza um depósito.
+
+```json
+{
+  "account_id": 1,
+  "operation_type": "deposit",
+  "amount": 500.00,
+  "description": "Depósito inicial"
+}
+```
+
+**POST** `/operations/withdraw`
+
+Realiza um saque (valida saldo e limite diário).
+
+```json
+{
+  "account_id": 1,
+  "operation_type": "withdrawal",
+  "amount": 200.00,
+  "description": "Saque"
+}
+```
+
+**GET** `/operations/{account_id}/statement`
+
+Retorna o extrato da conta com paginação.
+
+**GET** `/operations`
+
+Lista operações com filtros opcionais.
+
 ### Items (Protegido)
 
 **POST** `/items`
@@ -122,19 +193,23 @@ poetry run pytest --cov=src
 ├── src/
 │   ├── api/
 │   │   ├── endpoints/
-│   │   │   ├── auth.py      # Endpoints de autenticação
-│   │   │   └── items.py     # Endpoints de items
-│   │   ├── deps.py          # Dependências (DB, auth)
-│   │   └── routes.py        # Registro de rotas
+│   │   │   ├── accounts.py    # Endpoints de contas bancárias
+│   │   │   ├── operations.py  # Endpoints de operações
+│   │   │   ├── auth.py        # Endpoints de autenticação
+│   │   │   └── items.py       # Endpoints de items
+│   │   ├── deps.py            # Dependências (DB, auth)
+│   │   ├── routes.py          # Registro de rotas
+│   │   └── schemas.py         # Schemas Pydantic
 │   ├── core/
-│   │   ├── config.py        # Configurações
-│   │   └── security.py      # JWT e segurança
-│   ├── db.py                # Configuração do banco
-│   ├── models.py            # Modelos SQLAlchemy
-│   └── main.py              # Aplicação FastAPI
+│   │   ├── config.py          # Configurações
+│   │   └── security.py        # JWT e segurança
+│   ├── db.py                  # Configuração do banco
+│   ├── models.py              # Modelos SQLAlchemy
+│   └── main.py                # Aplicação FastAPI
 ├── tests/
-│   ├── conftest.py          # Fixtures pytest
-│   └── test_items.py        # Testes
+│   ├── conftest.py            # Fixtures pytest
+│   ├── test_banking.py        # Testes bancários
+│   └── test_items.py          # Testes de items
 ├── docker-compose.yml
 ├── Dockerfile
 ├── pyproject.toml
